@@ -1,0 +1,28 @@
+{
+  "name": "better-ffmpeg",
+  "version": "0.0.1",
+  "description": "A better ffmpeg sdk which can integrate ffmpeg more friendly",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "ffmpeg"
+  ],
+  "author": "zshnb",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/node": "^22.4.0",
+    "eslint": "^9.9.0",
+    "husky": "^9.1.4",
+    "jest": "^29.7.0",
+    "lint-staged": "^15.2.9",
+    "prettier": "^3.3.3",
+    "ts-jest": "^29.2.4",
+    "typescript": "^5.5.4"
+  },
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown"
+  }
+}
