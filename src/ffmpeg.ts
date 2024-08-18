@@ -1,14 +1,38 @@
-import { execFileSync, execSync } from 'child_process'
 import logger from './logger'
-import { LogLevelSetting, ReportSetting } from '../types/ffmpeg'
+import {
+  AudioInputOption,
+  Input,
+  InputContext,
+  LogLevelSetting,
+  MainInputOption,
+  OptionContext,
+  ReportSetting,
+  VideoInputOption,
+} from '../types/ffmpeg'
 import { LogLevel } from './loglevel'
+import { execFileSync, execSync } from 'node:child_process'
+import * as fs from 'node:fs'
+import { InputOptionProcessor } from './inputOptionProcessor'
+import * as EventEmitter from 'node:events'
 
-export class Ffmpeg {
+export class Ffmpeg implements InputContext {
   private readonly ffmpegPath: string
   private readonly globalOptions: string[]
+  private readonly inputOptionProcessor: InputOptionProcessor
+  private readonly inputs: Input[]
+  private readonly inputEventEmitter: EventEmitter
+  private inputIndex: number
 
   constructor(ffmpegPath?: string) {
     this.globalOptions = []
+    this.inputs = []
+    this.inputIndex = -1
+    this.inputEventEmitter = new EventEmitter()
+    this.inputOptionProcessor = new InputOptionProcessor(
+      this,
+      this.inputEventEmitter,
+    )
+    this.setupEventListeners()
     if (ffmpegPath) {
       this.checkFfmpegPathValid(ffmpegPath)
       this.ffmpegPath = ffmpegPath
@@ -22,6 +46,11 @@ export class Ffmpeg {
 
   override(): Ffmpeg {
     this.globalOptions.push('-y')
+    return this
+  }
+
+  noOverride(): Ffmpeg {
+    this.globalOptions.push('-n')
     return this
   }
 
@@ -68,8 +97,45 @@ export class Ffmpeg {
     return this
   }
 
+  input(): InputContext {
+    this.inputs.push({ source: '', options: [] })
+    this.inputIndex++
+    return this
+  }
+
+  file(path: string): OptionContext {
+    if (!fs.existsSync(path)) {
+      throw new Error(`file: ${path} not exist`)
+    }
+    if (!fs.statSync(path).isFile()) {
+      throw new Error(`file: ${path} is not a file`)
+    }
+    this.inputs[this.inputIndex].source = path
+    return this
+  }
+
+  option(): MainInputOption & VideoInputOption & AudioInputOption {
+    return this.inputOptionProcessor
+  }
+
+  url(url: string | URL): OptionContext {
+    this.inputs[this.inputIndex].source = url.toString()
+    return this
+  }
+
   get cmd(): string {
-    return `ffmpeg ${this.globalOptions.join(' ')}`
+    const inputs = this.inputs
+      .map((input) => {
+        return `${input.options.join(' ')} -i ${input.source}`
+      })
+      .join(' ')
+    return `ffmpeg ${this.globalOptionStr}${inputs}`
+  }
+
+  get globalOptionStr(): string {
+    return this.globalOptions.length === 0
+      ? ''
+      : this.globalOptions.join(' ') + ' '
   }
 
   private findFfmpegPath(): string | null {
@@ -94,5 +160,11 @@ export class Ffmpeg {
       logger.error(e, `${ffmpegPath} is not a valid ffmpeg`)
       throw new Error(`${ffmpegPath} is not a valid ffmpeg`)
     }
+  }
+
+  setupEventListeners() {
+    this.inputEventEmitter.on('inputOptionEnd', (options: string[]) => {
+      this.inputs[this.inputIndex].options = options
+    })
   }
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals'
+import { beforeEach, describe, expect, it } from '@jest/globals'
 import { Ffmpeg } from '../src/ffmpeg'
 import { LogLevel } from '../src/loglevel'
 
@@ -48,5 +48,24 @@ describe('ffmpeg class', () => {
   it('hide banner', () => {
     const ffmpeg = new Ffmpeg().hideBanner()
     expect(ffmpeg.cmd).toBe('ffmpeg -hide_banner')
+  })
+
+  describe('input options', () => {
+    let ffmpeg: Ffmpeg
+    beforeEach(() => {
+      ffmpeg = new Ffmpeg()
+    })
+    it('success', () => {
+      ffmpeg
+        .input()
+        .file('tests/media/5s_vertical_1080p.mp4')
+        .option()
+        .format('mkv')
+        .duration(5)
+        .end()
+      expect(ffmpeg.cmd).toBe(
+        'ffmpeg -f mkv -t 5 -i tests/media/5s_vertical_1080p.mp4',
+      )
+    })
   })
 })
