@@ -1,22 +1,21 @@
-import pino from 'pino';
-import '@dotenvx/dotenvx';
+import pino from 'pino'
+import '@dotenvx/dotenvx'
 
-console.log(process.env);
 const transport =
   process.env.NODE_ENV === 'development'
     ? {
         target: 'pino-pretty',
       }
-    : undefined;
+    : undefined
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
   transport,
   formatters: {
     level: (label) => {
-      return { level: label.toUpperCase() };
+      return { level: label.toUpperCase() }
     },
   },
   timestamp: pino.stdTimeFunctions.isoTime,
-});
+})
 
-export default logger;
+export default logger
