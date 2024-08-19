@@ -18,6 +18,11 @@ export type Input = {
 
 export type EventName = 'inputOptionEnd'
 
+export type RunResult = {
+  error?: Error
+  exitCode: number
+}
+
 export interface InputContext {
   input(): InputContext
 

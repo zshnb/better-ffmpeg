@@ -6,10 +6,11 @@ import {
   MainInputOption,
   OptionContext,
   ReportSetting,
+  RunResult,
   VideoInputOption,
 } from '../types/ffmpeg'
 import { LogLevel } from './loglevel'
-import { execFileSync, execSync } from 'node:child_process'
+import { execFileSync, execSync, spawn } from 'node:child_process'
 import * as fs from 'node:fs'
 import {
   MainInputOptionProcessor,
@@ -17,7 +18,7 @@ import {
 } from './inputOptionProcessor'
 import * as EventEmitter from 'node:events'
 
-export class Ffmpeg implements InputContext {
+export class Ffmpeg implements InputContext, OptionContext {
   private readonly ffmpegPath: string
   private readonly globalOptions: string[]
   private readonly inputOptionProcessor: MainInputOptionProcessor
@@ -104,6 +105,45 @@ export class Ffmpeg implements InputContext {
     return this
   }
 
+  run(): Promise<RunResult> {
+    const inputs = this.inputs.map((input) => {
+      return input.options.flat().concat(['-i', input.source])
+    })
+    const childProcess = spawn(
+      'ffmpeg',
+      this.globalOptions.concat(inputs.flat()),
+    )
+    let errorMessage = ''
+    childProcess.stderr.on('data', (data) => {
+      errorMessage += data.toString()
+    })
+    childProcess.stdout.on('data', () => {})
+
+    function handleExit(code: number, resolve: (value: RunResult) => void) {
+      if (code !== 0) {
+        logger.error(`ffmpeg exited with code ${code}`)
+        resolve({
+          exitCode: code,
+          error: new Error(errorMessage),
+        })
+      } else {
+        resolve({
+          exitCode: code,
+        })
+      }
+    }
+    return new Promise<RunResult>((resolve) => {
+      childProcess.on('exit', (code) => handleExit(code, resolve))
+      childProcess.on('error', (error) => {
+        resolve({
+          error,
+          exitCode: -1,
+        })
+      })
+      childProcess.on('close', (code) => handleExit(code, resolve))
+    })
+  }
+
   input(): InputContext {
     this.inputs.push({ source: '', options: [] })
     this.inputIndex++
@@ -137,10 +177,11 @@ export class Ffmpeg implements InputContext {
   get cmd(): string {
     const inputs = this.inputs
       .map((input) => {
-        return `${input.options.join(' ')} -i ${input.source}`
+        return input.options.flat().concat(['-i', input.source])
       })
+      .flat()
       .join(' ')
-    return `ffmpeg ${this.globalOptionStr}${inputs}`
+    return `${this.globalOptionStr}${inputs}`.trim()
   }
 
   get globalOptionStr(): string {

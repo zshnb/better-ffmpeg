@@ -9,7 +9,7 @@ import { Ffmpeg } from './ffmpeg'
 import * as EventEmitter from 'node:events'
 
 export class InputOptionProcessor implements InputOption {
-  protected options: string[]
+  protected options: (string | number)[][]
   protected readonly ffmpeg: Ffmpeg
   protected readonly eventEmitter: EventEmitter
 
@@ -35,32 +35,32 @@ export class MainInputOptionProcessor
   }
 
   format(fmt: string): MainInputOption {
-    this.options.push(`-f ${fmt}`)
+    this.options.push(['-f', fmt])
     return this
   }
 
   streamLoop(value: number): MainInputOption {
-    this.options.push(`-stream_loop ${value}`)
+    this.options.push(['-stream_loop', value])
     return this
   }
 
   duration(value: string | number): MainInputOption {
-    this.options.push(`-t ${value}`)
+    this.options.push(['-t', value])
     return this
   }
 
   seek(value: string): MainInputOption {
-    this.options.push(`-ss ${value}`)
+    this.options.push(['-ss', value])
     return this
   }
 
   seekNegative(value: string): MainInputOption {
-    this.options.push(`-sseof ${value}`)
+    this.options.push(['-sseof', value])
     return this
   }
 
   iSync(index: number): MainInputOption {
-    this.options.push(`-isync ${index}`)
+    this.options.push(['-isync', index])
     return this
   }
 }
@@ -84,8 +84,7 @@ export class VideoInputOptionProcessor
     if (streamSpecifier !== undefined) {
       param += `:${streamSpecifier}`
     }
-    param += ` ${value}`
-    this.options.push(param)
+    this.options.push([param, value])
     return this
   }
 }
