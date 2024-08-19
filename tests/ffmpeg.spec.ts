@@ -55,7 +55,7 @@ describe('ffmpeg class', () => {
     beforeEach(() => {
       ffmpeg = new Ffmpeg()
     })
-    it('success', () => {
+    it('success with main option', () => {
       ffmpeg
         .input()
         .file('tests/media/5s_vertical_1080p.mp4')
@@ -65,6 +65,17 @@ describe('ffmpeg class', () => {
         .end()
       expect(ffmpeg.cmd).toBe(
         'ffmpeg -f mkv -t 5 -i tests/media/5s_vertical_1080p.mp4',
+      )
+    })
+    it('success with video option', () => {
+      ffmpeg
+        .input()
+        .file('tests/media/5s_vertical_1080p.mp4')
+        .videoOption()
+        .codec({ value: 'libx264' })
+        .end()
+      expect(ffmpeg.cmd).toBe(
+        'ffmpeg -c:v libx264 -i tests/media/5s_vertical_1080p.mp4',
       )
     })
   })

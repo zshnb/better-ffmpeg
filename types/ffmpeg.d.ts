@@ -27,17 +27,18 @@ export interface InputContext {
 }
 
 export interface OptionContext {
-  option(): MainInputOption & VideoInputOption & AudioInputOption
+  option(): MainInputOption
+  videoOption(): VideoInputOption
 }
 
-export interface InputOption {}
+export interface InputOption {
+  end(): Ffmpeg
+}
 
 export interface MainInputOption extends InputOption {
   format(fmt: string): MainInputOption
 
   streamLoop(value: number): MainInputOption
-
-  codec(stream: string): MainInputOption
 
   duration(value: string | number): MainInputOption
 
@@ -46,10 +47,16 @@ export interface MainInputOption extends InputOption {
   seekNegative(value: string): MainInputOption
 
   iSync(index: number): MainInputOption
-
-  end(): Ffmpeg
 }
 
-export interface VideoInputOption extends InputOption {}
+export interface VideoInputOption extends InputOption {
+  codec({
+    value,
+    streamSpecifier,
+  }: {
+    value: string
+    streamSpecifier?: number
+  }): VideoInputOption
+}
 
 export interface AudioInputOption extends InputOption {}

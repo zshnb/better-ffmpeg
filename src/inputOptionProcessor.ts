@@ -1,35 +1,46 @@
 import {
   AudioInputOption,
   EventName,
+  InputOption,
   MainInputOption,
   VideoInputOption,
 } from '../types/ffmpeg'
 import { Ffmpeg } from './ffmpeg'
 import * as EventEmitter from 'node:events'
 
-export class InputOptionProcessor
-  implements MainInputOption, VideoInputOption, AudioInputOption
-{
-  private options: string[]
-  private readonly ffmpeg: Ffmpeg
-  private readonly eventEmitter: EventEmitter
+export class InputOptionProcessor implements InputOption {
+  protected options: string[]
+  protected readonly ffmpeg: Ffmpeg
+  protected readonly eventEmitter: EventEmitter
+
   constructor(ffmpeg: Ffmpeg, eventEmitter: EventEmitter) {
     this.options = []
     this.ffmpeg = ffmpeg
     this.eventEmitter = eventEmitter
   }
 
+  end(): Ffmpeg {
+    this.eventEmitter.emit<EventName>('inputOptionEnd', this.options)
+    this.options = []
+    return this.ffmpeg
+  }
+}
+
+export class MainInputOptionProcessor
+  extends InputOptionProcessor
+  implements MainInputOption, AudioInputOption
+{
+  constructor(ffmpeg: Ffmpeg, eventEmitter: EventEmitter) {
+    super(ffmpeg, eventEmitter)
+  }
+
   format(fmt: string): MainInputOption {
     this.options.push(`-f ${fmt}`)
     return this
   }
+
   streamLoop(value: number): MainInputOption {
     this.options.push(`-stream_loop ${value}`)
-    return this
-  }
-
-  codec(stream: string): MainInputOption {
-    this.options.push(`-codec ${stream}`)
     return this
   }
 
@@ -52,10 +63,29 @@ export class InputOptionProcessor
     this.options.push(`-isync ${index}`)
     return this
   }
+}
 
-  end(): Ffmpeg {
-    this.eventEmitter.emit<EventName>('inputOptionEnd', this.options)
-    this.options = []
-    return this.ffmpeg
+export class VideoInputOptionProcessor
+  extends InputOptionProcessor
+  implements VideoInputOption
+{
+  constructor(ffmpeg: Ffmpeg, eventEmitter: EventEmitter) {
+    super(ffmpeg, eventEmitter)
+  }
+
+  codec({
+    value,
+    streamSpecifier,
+  }: {
+    value: string
+    streamSpecifier?: number
+  }): VideoInputOption {
+    let param = '-c:v'
+    if (streamSpecifier !== undefined) {
+      param += `:${streamSpecifier}`
+    }
+    param += ` ${value}`
+    this.options.push(param)
+    return this
   }
 }

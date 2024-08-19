@@ -1,6 +1,5 @@
 import logger from './logger'
 import {
-  AudioInputOption,
   Input,
   InputContext,
   LogLevelSetting,
@@ -12,13 +11,17 @@ import {
 import { LogLevel } from './loglevel'
 import { execFileSync, execSync } from 'node:child_process'
 import * as fs from 'node:fs'
-import { InputOptionProcessor } from './inputOptionProcessor'
+import {
+  MainInputOptionProcessor,
+  VideoInputOptionProcessor,
+} from './inputOptionProcessor'
 import * as EventEmitter from 'node:events'
 
 export class Ffmpeg implements InputContext {
   private readonly ffmpegPath: string
   private readonly globalOptions: string[]
-  private readonly inputOptionProcessor: InputOptionProcessor
+  private readonly inputOptionProcessor: MainInputOptionProcessor
+  private readonly videoOptionProcessor: VideoInputOptionProcessor
   private readonly inputs: Input[]
   private readonly inputEventEmitter: EventEmitter
   private inputIndex: number
@@ -28,7 +31,11 @@ export class Ffmpeg implements InputContext {
     this.inputs = []
     this.inputIndex = -1
     this.inputEventEmitter = new EventEmitter()
-    this.inputOptionProcessor = new InputOptionProcessor(
+    this.inputOptionProcessor = new MainInputOptionProcessor(
+      this,
+      this.inputEventEmitter,
+    )
+    this.videoOptionProcessor = new VideoInputOptionProcessor(
       this,
       this.inputEventEmitter,
     )
@@ -114,8 +121,12 @@ export class Ffmpeg implements InputContext {
     return this
   }
 
-  option(): MainInputOption & VideoInputOption & AudioInputOption {
+  option(): MainInputOption {
     return this.inputOptionProcessor
+  }
+
+  videoOption(): VideoInputOption {
+    return this.videoOptionProcessor
   }
 
   url(url: string | URL): OptionContext {
