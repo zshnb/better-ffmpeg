@@ -1,5 +1,6 @@
 import { LogLevel } from '../src/loglevel'
-import { Ffmpeg } from '../src/ffmpeg'
+import { MainInputOption, VideoInputOption } from './inputOption'
+import { MainOutputOption, VideoOutputOption } from './outputOption'
 
 export type Flag = 'repeat' | 'level'
 export type LogLevelSetting = {
@@ -25,43 +26,21 @@ export type RunResult = {
 
 export interface InputContext {
   input(): InputContext
-
-  file(path: string): OptionContext
-
-  url(url: string | URL): OptionContext
+  file(path: string): InputOptionContext
+  url(url: string | URL): InputOptionContext
 }
 
-export interface OptionContext {
-  option(): MainInputOption
+export interface OutputContext {
+  output(): OutputContext
+  file(path: string): OutputOptionContext
+}
+
+export interface InputOptionContext {
+  inputOption(): MainInputOption
   videoOption(): VideoInputOption
 }
 
-export interface InputOption {
-  end(): Ffmpeg
+export interface OutputOptionContext {
+  outputOption(): MainOutputOption
+  videoOption(): VideoOutputOption
 }
-
-export interface MainInputOption extends InputOption {
-  format(fmt: string): MainInputOption
-
-  streamLoop(value: number): MainInputOption
-
-  duration(value: string | number): MainInputOption
-
-  seek(value: string): MainInputOption
-
-  seekNegative(value: string): MainInputOption
-
-  iSync(index: number): MainInputOption
-}
-
-export interface VideoInputOption extends InputOption {
-  codec({
-    value,
-    streamSpecifier,
-  }: {
-    value: string
-    streamSpecifier?: number
-  }): VideoInputOption
-}
-
-export interface AudioInputOption extends InputOption {}

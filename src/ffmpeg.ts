@@ -2,12 +2,12 @@ import logger from './logger'
 import {
   Input,
   InputContext,
+  InputOptionContext,
   LogLevelSetting,
-  MainInputOption,
-  OptionContext,
+  OutputContext,
+  OutputOptionContext,
   ReportSetting,
   RunResult,
-  VideoInputOption,
 } from '../types/ffmpeg'
 import { LogLevel } from './loglevel'
 import { execFileSync, execSync, spawn } from 'node:child_process'
@@ -17,8 +17,16 @@ import {
   VideoInputOptionProcessor,
 } from './inputOptionProcessor'
 import * as EventEmitter from 'node:events'
+import { MainInputOption, VideoInputOption } from '../types/inputOption'
+import { MainOutputOption } from '../types/outputOption'
 
-export class Ffmpeg implements InputContext, OptionContext {
+export class Ffmpeg
+  implements
+    InputContext,
+    InputOptionContext,
+    OutputContext,
+    OutputOptionContext
+{
   private readonly ffmpegPath: string
   private readonly globalOptions: string[]
   private readonly inputOptionProcessor: MainInputOptionProcessor
@@ -150,7 +158,11 @@ export class Ffmpeg implements InputContext, OptionContext {
     return this
   }
 
-  file(path: string): OptionContext {
+  output(): OutputContext {
+    return this
+  }
+
+  file(path: string): InputOptionContext {
     if (!fs.existsSync(path)) {
       throw new Error(`file: ${path} not exist`)
     }
@@ -161,7 +173,11 @@ export class Ffmpeg implements InputContext, OptionContext {
     return this
   }
 
-  option(): MainInputOption {
+  inputOption(): MainInputOption {
+    return this.inputOptionProcessor
+  }
+
+  outputOption(): MainOutputOption {
     return this.inputOptionProcessor
   }
 
@@ -169,7 +185,7 @@ export class Ffmpeg implements InputContext, OptionContext {
     return this.videoOptionProcessor
   }
 
-  url(url: string | URL): OptionContext {
+  url(url: string | URL): InputOptionContext {
     this.inputs[this.inputIndex].source = url.toString()
     return this
   }

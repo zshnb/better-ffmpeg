@@ -59,7 +59,7 @@ describe('ffmpeg class', () => {
       ffmpeg
         .input()
         .file('tests/media/5s_vertical_1080p.mp4')
-        .option()
+        .inputOption()
         .format('mkv')
         .duration(5)
         .end()
