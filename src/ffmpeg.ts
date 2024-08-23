@@ -3,15 +3,18 @@ import { LogLevelSetting, ReportSetting, RunResult } from '../types/ffmpeg'
 import { LogLevel } from './loglevel'
 import { execFileSync, execSync, spawn } from 'node:child_process'
 import { InputContext } from './inputContext'
+import { OutputContext } from './outputContext'
 
 export class Ffmpeg {
   private readonly ffmpegPath: string
   private readonly globalOptions: string[]
   private readonly inputContext: InputContext
+  private readonly outputContext: OutputContext
 
   constructor(ffmpegPath?: string) {
     this.globalOptions = []
     this.inputContext = new InputContext(this)
+    this.outputContext = new OutputContext(this)
     if (ffmpegPath) {
       this.checkFfmpegPathValid(ffmpegPath)
       this.ffmpegPath = ffmpegPath
@@ -79,7 +82,9 @@ export class Ffmpeg {
   run(): Promise<RunResult> {
     const childProcess = spawn(
       'ffmpeg',
-      this.globalOptions.concat(this.inputContext.inputParameters),
+      this.globalOptions
+        .concat(this.inputContext.inputParameters)
+        .concat(this.outputContext.outputParameters),
     )
     let errorMessage = ''
     childProcess.stderr.on('data', (data) => {
@@ -116,8 +121,12 @@ export class Ffmpeg {
     return this.inputContext
   }
 
+  output(): OutputContext {
+    return this.outputContext
+  }
+
   get cmd(): string {
-    return `${this.globalOptionStr}${this.inputContext.inputParameters.join(' ')}`.trim()
+    return `${this.globalOptionStr}${this.inputContext.inputParameters.join(' ')} ${this.outputContext.outputParameters.join(' ')}`.trim()
   }
 
   get globalOptionStr(): string {

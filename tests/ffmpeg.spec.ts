@@ -74,7 +74,11 @@ describe('ffmpeg class', () => {
         .videoOption()
         .codec({ value: 'h264' })
         .end()
-      expect(ffmpeg.cmd).toBe('-c:v h264 -i tests/media/5s_vertical_1080p.mp4')
+        .output()
+        .file('tests/output/5s_vertical_1080p.mp4')
+      expect(ffmpeg.cmd).toBe(
+        '-c:v h264 -i tests/media/5s_vertical_1080p.mp4 tests/output/5s_vertical_1080p.mp4',
+      )
       const result = await ffmpeg.run()
       expect(result.exitCode).toBe(0)
     }, 50000)

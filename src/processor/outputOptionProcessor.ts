@@ -1,14 +1,10 @@
-import { EventName } from '../types/ffmpeg'
-import { Ffmpeg } from './ffmpeg'
+import { EventName } from '../../types/ffmpeg'
+import { Ffmpeg } from '../ffmpeg'
 import * as EventEmitter from 'node:events'
-import {
-  AudioInputOption,
-  InputOption,
-  MainInputOption,
-  VideoInputOption,
-} from '../types/inputOption'
+import { VideoInputOption } from '../../types/inputOption'
+import { MainOutputOption, OutputOption } from '../../types/outputOption'
 
-export class InputOptionProcessor implements InputOption {
+export class OutputOptionProcessor implements OutputOption {
   protected options: (string | number)[][]
   protected readonly ffmpeg: Ffmpeg
   protected readonly eventEmitter: EventEmitter
@@ -20,53 +16,38 @@ export class InputOptionProcessor implements InputOption {
   }
 
   end(): Ffmpeg {
-    this.eventEmitter.emit<EventName>('inputOptionEnd', this.options)
+    this.eventEmitter.emit<EventName>('outputOptionEnd', this.options)
     this.options = []
     return this.ffmpeg
   }
 }
 
-export class MainInputOptionProcessor
-  extends InputOptionProcessor
-  implements MainInputOption, AudioInputOption
+export class MainOutputOptionProcessor
+  extends OutputOptionProcessor
+  implements MainOutputOption
 {
   constructor(ffmpeg: Ffmpeg, eventEmitter: EventEmitter) {
     super(ffmpeg, eventEmitter)
   }
 
-  format(fmt: string): MainInputOption {
+  format(fmt: string): MainOutputOption {
     this.options.push(['-f', fmt])
     return this
   }
 
-  streamLoop(value: number): MainInputOption {
-    this.options.push(['-stream_loop', value])
-    return this
-  }
-
-  duration(value: string | number): MainInputOption {
+  duration(value: string | number): MainOutputOption {
     this.options.push(['-t', value])
     return this
   }
 
-  seek(value: string): MainInputOption {
-    this.options.push(['-ss', value])
-    return this
-  }
-
-  seekNegative(value: string): MainInputOption {
-    this.options.push(['-sseof', value])
-    return this
-  }
-
-  iSync(index: number): MainInputOption {
-    this.options.push(['-isync', index])
+  fs(value: number): MainOutputOption {
+    this.options.push(['-fs', value])
     return this
   }
 }
 
-export class VideoInputOptionProcessor
-  extends InputOptionProcessor
+export class VideoOutputOptionProcessor
+  extends OutputOptionProcessor
   implements VideoInputOption
 {
   constructor(ffmpeg: Ffmpeg, eventEmitter: EventEmitter) {
