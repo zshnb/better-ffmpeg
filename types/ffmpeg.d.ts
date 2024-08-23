@@ -15,6 +15,11 @@ export type Input = {
   options: string[]
 }
 
+export type Output = {
+  source: string
+  options: string[]
+}
+
 export type EventName = 'inputOptionEnd'
 
 export type RunResult = {

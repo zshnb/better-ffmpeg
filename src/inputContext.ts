@@ -4,7 +4,7 @@ import { MainInputOption, VideoInputOption } from '../types/inputOption'
 import {
   MainInputOptionProcessor,
   VideoInputOptionProcessor,
-} from './inputOptionProcessor'
+} from './processor/inputOptionProcessor'
 import * as EventEmitter from 'node:events'
 import { Ffmpeg } from './ffmpeg'
 
