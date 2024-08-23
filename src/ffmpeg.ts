@@ -1,54 +1,17 @@
 import logger from './logger'
-import {
-  Input,
-  InputContext,
-  InputOptionContext,
-  LogLevelSetting,
-  OutputContext,
-  OutputOptionContext,
-  ReportSetting,
-  RunResult,
-} from '../types/ffmpeg'
+import { LogLevelSetting, ReportSetting, RunResult } from '../types/ffmpeg'
 import { LogLevel } from './loglevel'
 import { execFileSync, execSync, spawn } from 'node:child_process'
-import * as fs from 'node:fs'
-import {
-  MainInputOptionProcessor,
-  VideoInputOptionProcessor,
-} from './inputOptionProcessor'
-import * as EventEmitter from 'node:events'
-import { MainInputOption, VideoInputOption } from '../types/inputOption'
-import { MainOutputOption } from '../types/outputOption'
+import { InputContext } from './inputContext'
 
-export class Ffmpeg
-  implements
-    InputContext,
-    InputOptionContext,
-    OutputContext,
-    OutputOptionContext
-{
+export class Ffmpeg {
   private readonly ffmpegPath: string
   private readonly globalOptions: string[]
-  private readonly inputOptionProcessor: MainInputOptionProcessor
-  private readonly videoOptionProcessor: VideoInputOptionProcessor
-  private readonly inputs: Input[]
-  private readonly inputEventEmitter: EventEmitter
-  private inputIndex: number
+  private readonly inputContext: InputContext
 
   constructor(ffmpegPath?: string) {
     this.globalOptions = []
-    this.inputs = []
-    this.inputIndex = -1
-    this.inputEventEmitter = new EventEmitter()
-    this.inputOptionProcessor = new MainInputOptionProcessor(
-      this,
-      this.inputEventEmitter,
-    )
-    this.videoOptionProcessor = new VideoInputOptionProcessor(
-      this,
-      this.inputEventEmitter,
-    )
-    this.setupEventListeners()
+    this.inputContext = new InputContext(this)
     if (ffmpegPath) {
       this.checkFfmpegPathValid(ffmpegPath)
       this.ffmpegPath = ffmpegPath
@@ -114,12 +77,9 @@ export class Ffmpeg
   }
 
   run(): Promise<RunResult> {
-    const inputs = this.inputs.map((input) => {
-      return input.options.flat().concat(['-i', input.source])
-    })
     const childProcess = spawn(
       'ffmpeg',
-      this.globalOptions.concat(inputs.flat()),
+      this.globalOptions.concat(this.inputContext.inputParameters),
     )
     let errorMessage = ''
     childProcess.stderr.on('data', (data) => {
@@ -153,51 +113,11 @@ export class Ffmpeg
   }
 
   input(): InputContext {
-    this.inputs.push({ source: '', options: [] })
-    this.inputIndex++
-    return this
-  }
-
-  output(): OutputContext {
-    return this
-  }
-
-  file(path: string): InputOptionContext {
-    if (!fs.existsSync(path)) {
-      throw new Error(`file: ${path} not exist`)
-    }
-    if (!fs.statSync(path).isFile()) {
-      throw new Error(`file: ${path} is not a file`)
-    }
-    this.inputs[this.inputIndex].source = path
-    return this
-  }
-
-  inputOption(): MainInputOption {
-    return this.inputOptionProcessor
-  }
-
-  outputOption(): MainOutputOption {
-    return this.inputOptionProcessor
-  }
-
-  videoOption(): VideoInputOption {
-    return this.videoOptionProcessor
-  }
-
-  url(url: string | URL): InputOptionContext {
-    this.inputs[this.inputIndex].source = url.toString()
-    return this
+    return this.inputContext
   }
 
   get cmd(): string {
-    const inputs = this.inputs
-      .map((input) => {
-        return input.options.flat().concat(['-i', input.source])
-      })
-      .flat()
-      .join(' ')
-    return `${this.globalOptionStr}${inputs}`.trim()
+    return `${this.globalOptionStr}${this.inputContext.inputParameters.join(' ')}`.trim()
   }
 
   get globalOptionStr(): string {
@@ -228,11 +148,5 @@ export class Ffmpeg
       logger.error(e, `${ffmpegPath} is not a valid ffmpeg`)
       throw new Error(`${ffmpegPath} is not a valid ffmpeg`)
     }
-  }
-
-  setupEventListeners() {
-    this.inputEventEmitter.on('inputOptionEnd', (options: string[]) => {
-      this.inputs[this.inputIndex].options = options
-    })
   }
 }

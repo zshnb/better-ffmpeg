@@ -1,12 +1,12 @@
+import { EventName } from '../types/ffmpeg'
+import { Ffmpeg } from './ffmpeg'
+import * as EventEmitter from 'node:events'
 import {
   AudioInputOption,
-  EventName,
   InputOption,
   MainInputOption,
   VideoInputOption,
-} from '../types/ffmpeg'
-import { Ffmpeg } from './ffmpeg'
-import * as EventEmitter from 'node:events'
+} from '../types/inputOption'
 
 export class InputOptionProcessor implements InputOption {
   protected options: (string | number)[][]
