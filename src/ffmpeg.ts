@@ -1,14 +1,17 @@
-import { execFileSync, execSync } from 'child_process'
 import logger from './logger'
-import { LogLevelSetting, ReportSetting } from '../types/ffmpeg'
+import { LogLevelSetting, ReportSetting, RunResult } from '../types/ffmpeg'
 import { LogLevel } from './loglevel'
+import { execFileSync, execSync, spawn } from 'node:child_process'
+import { InputContext } from './inputContext'
 
 export class Ffmpeg {
   private readonly ffmpegPath: string
   private readonly globalOptions: string[]
+  private readonly inputContext: InputContext
 
   constructor(ffmpegPath?: string) {
     this.globalOptions = []
+    this.inputContext = new InputContext(this)
     if (ffmpegPath) {
       this.checkFfmpegPathValid(ffmpegPath)
       this.ffmpegPath = ffmpegPath
@@ -22,6 +25,11 @@ export class Ffmpeg {
 
   override(): Ffmpeg {
     this.globalOptions.push('-y')
+    return this
+  }
+
+  noOverride(): Ffmpeg {
+    this.globalOptions.push('-n')
     return this
   }
 
@@ -68,8 +76,54 @@ export class Ffmpeg {
     return this
   }
 
+  run(): Promise<RunResult> {
+    const childProcess = spawn(
+      'ffmpeg',
+      this.globalOptions.concat(this.inputContext.inputParameters),
+    )
+    let errorMessage = ''
+    childProcess.stderr.on('data', (data) => {
+      errorMessage += data.toString()
+    })
+    childProcess.stdout.on('data', () => {})
+
+    function handleExit(code: number, resolve: (value: RunResult) => void) {
+      if (code !== 0) {
+        logger.error(`ffmpeg exited with code ${code}`)
+        resolve({
+          exitCode: code,
+          error: new Error(errorMessage),
+        })
+      } else {
+        resolve({
+          exitCode: code,
+        })
+      }
+    }
+    return new Promise<RunResult>((resolve) => {
+      childProcess.on('exit', (code) => handleExit(code, resolve))
+      childProcess.on('error', (error) => {
+        resolve({
+          error,
+          exitCode: -1,
+        })
+      })
+      childProcess.on('close', (code) => handleExit(code, resolve))
+    })
+  }
+
+  input(): InputContext {
+    return this.inputContext
+  }
+
   get cmd(): string {
-    return `ffmpeg ${this.globalOptions.join(' ')}`
+    return `${this.globalOptionStr}${this.inputContext.inputParameters.join(' ')}`.trim()
+  }
+
+  get globalOptionStr(): string {
+    return this.globalOptions.length === 0
+      ? ''
+      : this.globalOptions.join(' ') + ' '
   }
 
   private findFfmpegPath(): string | null {

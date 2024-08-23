@@ -9,3 +9,15 @@ export type ReportSetting = {
   file?: string
   level?: LogLevel
 }
+
+export type Input = {
+  source: string
+  options: string[]
+}
+
+export type EventName = 'inputOptionEnd'
+
+export type RunResult = {
+  error?: Error
+  exitCode: number
+}
