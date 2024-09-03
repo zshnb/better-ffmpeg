@@ -5,7 +5,7 @@ import { execFileSync, execSync, spawn } from 'node:child_process'
 import { InputContext } from './inputContext'
 import { OutputContext } from './outputContext'
 import { VideoFilter } from './filter/VideoFilter'
-import * as EventEmitter from 'node:events'
+import { AudioFilter } from './filter/AudioFilter'
 
 export class Ffmpeg {
   private readonly ffmpegPath: string
@@ -13,13 +13,14 @@ export class Ffmpeg {
   private readonly inputContext: InputContext
   private readonly outputContext: OutputContext
   private readonly vf: VideoFilter
-  private readonly vfEmit: EventEmitter
+  private readonly af: AudioFilter
 
   constructor(ffmpegPath?: string) {
     this.globalOptions = []
     this.inputContext = new InputContext(this)
     this.outputContext = new OutputContext(this)
     this.vf = new VideoFilter(this)
+    this.af = new AudioFilter(this)
     if (ffmpegPath) {
       this.checkFfmpegPathValid(ffmpegPath)
       this.ffmpegPath = ffmpegPath
@@ -136,14 +137,27 @@ export class Ffmpeg {
     return this.vf
   }
 
+  audioFilter(): AudioFilter {
+    this.af.start()
+    return this.af
+  }
+
   get cmd(): string {
-    return `${this.globalOptionStr}${this.inputContext.inputParameters.join(' ')} ${this.vf.filterParameters.join(' ')} ${this.outputContext.outputParameters.join(' ')}`.trim()
+    let cmd = `${this.globalOptionStr}`
+    if (this.inputContext.inputParameters.length > 0) {
+      cmd += ' ' + this.inputContext.inputParameters.join(' ')
+    }
+    if (this.vf.filterParameters.length > 0) {
+      cmd += ' ' + this.vf.filterParameters.join(' ')
+    }
+    if (this.outputContext.outputParameters.length > 0) {
+      cmd += ' ' + this.outputContext.outputParameters.join(' ')
+    }
+    return cmd.trim()
   }
 
   get globalOptionStr(): string {
-    return this.globalOptions.length === 0
-      ? ''
-      : this.globalOptions.join(' ') + ' '
+    return this.globalOptions.length === 0 ? '' : this.globalOptions.join(' ')
   }
 
   private findFfmpegPath(): string | null {
