@@ -83,4 +83,24 @@ describe('ffmpeg class', () => {
       expect(result.exitCode).toBe(0)
     }, 50000)
   })
+
+  describe('video filter', () => {
+    let ffmpeg: Ffmpeg
+    beforeEach(() => {
+      ffmpeg = new Ffmpeg()
+    })
+    it('success with filter', async () => {
+      ffmpeg
+        .input()
+        .file('tests/media/5s_vertical_1080p.mp4')
+        .videoFilter()
+        .raw('scale', { x: 400, y: 400 })
+        .end()
+        .output()
+        .file('tests/output/5s_vertical_1080p.mp4')
+      expect(ffmpeg.cmd).toBe(
+        '-i tests/media/5s_vertical_1080p.mp4 -vf scale=x=400:y=400 tests/output/5s_vertical_1080p.mp4',
+      )
+    }, 50000)
+  })
 })

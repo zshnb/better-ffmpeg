@@ -7,6 +7,7 @@ import {
 } from './processor/inputOptionProcessor'
 import * as EventEmitter from 'node:events'
 import { Ffmpeg } from './ffmpeg'
+import { VideoFilter } from './filter/VideoFilter'
 
 export class InputContext {
   private readonly inputs: Input[]
@@ -49,6 +50,10 @@ export class InputContext {
 
   videoOption(): VideoInputOption {
     return this.videoOptionProcessor
+  }
+
+  videoFilter(): VideoFilter {
+    return this.ffmpeg.videoFilter()
   }
 
   setupEventListeners() {

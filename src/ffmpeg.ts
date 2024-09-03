@@ -4,17 +4,22 @@ import { LogLevel } from './loglevel'
 import { execFileSync, execSync, spawn } from 'node:child_process'
 import { InputContext } from './inputContext'
 import { OutputContext } from './outputContext'
+import { VideoFilter } from './filter/VideoFilter'
+import * as EventEmitter from 'node:events'
 
 export class Ffmpeg {
   private readonly ffmpegPath: string
   private readonly globalOptions: string[]
   private readonly inputContext: InputContext
   private readonly outputContext: OutputContext
+  private readonly vf: VideoFilter
+  private readonly vfEmit: EventEmitter
 
   constructor(ffmpegPath?: string) {
     this.globalOptions = []
     this.inputContext = new InputContext(this)
     this.outputContext = new OutputContext(this)
+    this.vf = new VideoFilter(this)
     if (ffmpegPath) {
       this.checkFfmpegPathValid(ffmpegPath)
       this.ffmpegPath = ffmpegPath
@@ -84,6 +89,7 @@ export class Ffmpeg {
       'ffmpeg',
       this.globalOptions
         .concat(this.inputContext.inputParameters)
+        .concat(this.vf.filterParameters)
         .concat(this.outputContext.outputParameters),
     )
     let errorMessage = ''
@@ -125,8 +131,13 @@ export class Ffmpeg {
     return this.outputContext
   }
 
+  videoFilter(): VideoFilter {
+    this.vf.start()
+    return this.vf
+  }
+
   get cmd(): string {
-    return `${this.globalOptionStr}${this.inputContext.inputParameters.join(' ')} ${this.outputContext.outputParameters.join(' ')}`.trim()
+    return `${this.globalOptionStr}${this.inputContext.inputParameters.join(' ')} ${this.vf.filterParameters.join(' ')} ${this.outputContext.outputParameters.join(' ')}`.trim()
   }
 
   get globalOptionStr(): string {
