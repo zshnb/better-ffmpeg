@@ -12,12 +12,12 @@ export type ReportSetting = {
 
 export type Input = {
   source: string
-  options: string[]
+  options: (string | number)[]
 }
 
 export type Output = {
   source: string
-  options: string[]
+  options: (string | number)[]
 }
 
 export type EventName = 'inputOptionEnd'
@@ -26,3 +26,5 @@ export type RunResult = {
   error?: Error
   exitCode: number
 }
+
+export type MediaTarget = 'video' | 'audio'

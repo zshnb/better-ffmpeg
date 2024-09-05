@@ -1,34 +1,15 @@
-import { Output } from '../types/ffmpeg'
-import * as EventEmitter from 'node:events'
+import { MediaTarget, Output } from '../types/ffmpeg'
 import { Ffmpeg } from './ffmpeg'
-import {
-  MainOutputOptionProcessor,
-  VideoOutputOptionProcessor,
-} from './processor/outputOptionProcessor'
-import { MainOutputOption, VideoOutputOption } from '../types/outputOption'
 
 export class OutputContext {
   private readonly outputs: Output[]
   private outputIndex: number
-  private readonly mainOutputOptionProcessor: MainOutputOptionProcessor
-  private readonly videoOutputOptionProcessor: VideoOutputOptionProcessor
-  private readonly inputEventEmitter: EventEmitter
   private readonly ffmpeg: Ffmpeg
 
   constructor(ffmpeg: Ffmpeg) {
-    this.ffmpeg = ffmpeg
     this.outputs = []
     this.outputIndex = 0
-    this.inputEventEmitter = new EventEmitter()
-    this.mainOutputOptionProcessor = new MainOutputOptionProcessor(
-      ffmpeg,
-      this.inputEventEmitter,
-    )
-    this.videoOutputOptionProcessor = new VideoOutputOptionProcessor(
-      ffmpeg,
-      this.inputEventEmitter,
-    )
-    this.setupEventListeners()
+    this.ffmpeg = ffmpeg
   }
 
   file(path: string): OutputContext {
@@ -36,26 +17,48 @@ export class OutputContext {
     return this
   }
 
-  outputOption(): MainOutputOption {
-    return this.mainOutputOptionProcessor
+  format(fmt: string): OutputContext {
+    this.outputs[this.outputIndex].options.push(...['-f', fmt])
+    return this
   }
 
-  videoOption(): VideoOutputOption {
-    return this.videoOutputOptionProcessor
+  duration(value: string | number): OutputContext {
+    this.outputs[this.outputIndex].options.push(...['-t', value])
+    return this
   }
 
-  setupEventListeners() {
-    this.inputEventEmitter.on('outputOptionEnd', (options: string[]) => {
-      this.outputs[this.outputIndex].options = options
-      this.outputIndex += 1
-    })
+  fs(value: number): OutputContext {
+    this.outputs[this.outputIndex].options.push(...['-fs', value])
+    return this
+  }
+
+  codec({
+    target,
+    value,
+    streamSpecifier,
+  }: {
+    target: MediaTarget
+    value: string
+    streamSpecifier?: number
+  }): OutputContext {
+    let param = target === 'video' ? '-c:v' : '-c:a'
+    if (streamSpecifier !== undefined) {
+      param += `:${streamSpecifier}`
+    }
+    this.outputs[this.outputIndex].options.push(...[param, value])
+    return this
   }
 
   get outputParameters(): string[] {
     return this.outputs
       .map((output) => {
-        return output.options.flat().concat([output.source])
+        return output.options.map((it) => it.toString()).concat([output.source])
       })
       .flat()
+  }
+
+  end(): Ffmpeg {
+    this.outputIndex += 1
+    return this.ffmpeg
   }
 }

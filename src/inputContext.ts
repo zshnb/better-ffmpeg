@@ -1,36 +1,17 @@
-import { Input } from '../types/ffmpeg'
+import { Input, MediaTarget } from '../types/ffmpeg'
 import * as fs from 'node:fs'
-import { MainInputOption, VideoInputOption } from '../types/inputOption'
-import {
-  MainInputOptionProcessor,
-  VideoInputOptionProcessor,
-} from './processor/inputOptionProcessor'
-import * as EventEmitter from 'node:events'
 import { Ffmpeg } from './ffmpeg'
 import { VideoFilter } from './filter/VideoFilter'
 
 export class InputContext {
   private readonly inputs: Input[]
   private inputIndex: number
-  private readonly inputOptionProcessor: MainInputOptionProcessor
-  private readonly videoOptionProcessor: VideoInputOptionProcessor
-  private readonly inputEventEmitter: EventEmitter
   private readonly ffmpeg: Ffmpeg
 
   constructor(ffmpeg: Ffmpeg) {
     this.ffmpeg = ffmpeg
     this.inputs = []
     this.inputIndex = 0
-    this.inputEventEmitter = new EventEmitter()
-    this.inputOptionProcessor = new MainInputOptionProcessor(
-      ffmpeg,
-      this.inputEventEmitter,
-    )
-    this.videoOptionProcessor = new VideoInputOptionProcessor(
-      ffmpeg,
-      this.inputEventEmitter,
-    )
-    this.setupEventListeners()
   }
 
   file(path: string): InputContext {
@@ -44,29 +25,68 @@ export class InputContext {
     return this
   }
 
-  inputOption(): MainInputOption {
-    return this.inputOptionProcessor
+  format(fmt: string): InputContext {
+    this.inputs[this.inputIndex].options.push(...['-f', fmt])
+    return this
   }
 
-  videoOption(): VideoInputOption {
-    return this.videoOptionProcessor
+  streamLoop(value: number): InputContext {
+    this.inputs[this.inputIndex].options.push(...['-stream_loop', value])
+    return this
+  }
+
+  duration(value: string | number): InputContext {
+    this.inputs[this.inputIndex].options.push(...['t', value])
+    return this
+  }
+
+  seek(value: string): InputContext {
+    this.inputs[this.inputIndex].options.push(...['ss', value])
+    return this
+  }
+
+  seekNegative(value: string): InputContext {
+    this.inputs[this.inputIndex].options.push(...['sseof', value])
+    return this
+  }
+
+  iSync(index: number): InputContext {
+    this.inputs[this.inputIndex].options.push(...['isync', index])
+    return this
+  }
+
+  codec({
+    target,
+    value,
+    streamSpecifier,
+  }: {
+    target: MediaTarget
+    value: string
+    streamSpecifier?: number
+  }): InputContext {
+    let param = target === 'video' ? '-c:v' : '-c:a'
+    if (streamSpecifier !== undefined) {
+      param += `:${streamSpecifier}`
+    }
+    this.inputs[this.inputIndex].options.push(...[param, value])
+    return this
+  }
+
+  end(): Ffmpeg {
+    this.inputIndex += 1
+    return this.ffmpeg
   }
 
   videoFilter(): VideoFilter {
     return this.ffmpeg.videoFilter()
   }
 
-  setupEventListeners() {
-    this.inputEventEmitter.on('inputOptionEnd', (options: string[]) => {
-      this.inputs[this.inputIndex].options = options
-      this.inputIndex += 1
-    })
-  }
-
   get inputParameters(): string[] {
     return this.inputs
       .map((input) => {
-        return input.options.flat().concat(['-i', input.source])
+        return input.options
+          .map((it) => it.toString())
+          .concat(['-i', input.source])
       })
       .flat()
   }

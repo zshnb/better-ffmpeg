@@ -59,7 +59,6 @@ describe('ffmpeg class', () => {
       ffmpeg
         .input()
         .file('tests/media/5s_vertical_1080p.mp4')
-        .inputOption()
         .format('mkv')
         .duration(5)
         .end()
@@ -71,8 +70,10 @@ describe('ffmpeg class', () => {
       ffmpeg
         .input()
         .file('tests/media/5s_vertical_1080p.mp4')
-        .videoOption()
-        .codec({ value: 'h264' })
+        .codec({
+          target: 'video',
+          value: 'h264',
+        })
         .end()
         .output()
         .file('tests/output/5s_vertical_1080p.mp4')
