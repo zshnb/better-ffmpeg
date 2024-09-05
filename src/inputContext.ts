@@ -72,6 +72,12 @@ export class InputContext {
     return this
   }
 
+  raw(str: string): InputContext {
+    const array = str.split(' ', 1)
+    this.inputs[this.inputIndex].options.push(...array)
+    return this
+  }
+
   end(): Ffmpeg {
     this.inputIndex += 1
     return this.ffmpeg

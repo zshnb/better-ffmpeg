@@ -49,16 +49,22 @@ export class OutputContext {
     return this
   }
 
+  raw(str: string): OutputContext {
+    const array = str.split(' ', 1)
+    this.outputs[this.outputIndex].options.push(...array)
+    return this
+  }
+
+  end(): Ffmpeg {
+    this.outputIndex += 1
+    return this.ffmpeg
+  }
+
   get outputParameters(): string[] {
     return this.outputs
       .map((output) => {
         return output.options.map((it) => it.toString()).concat([output.source])
       })
       .flat()
-  }
-
-  end(): Ffmpeg {
-    this.outputIndex += 1
-    return this.ffmpeg
   }
 }
