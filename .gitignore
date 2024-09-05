@@ -132,3 +132,4 @@ dist
 
 .idea/
 tests/output
+**/.DS_Store

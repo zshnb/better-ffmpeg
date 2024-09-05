@@ -90,7 +90,7 @@ export class Ffmpeg {
       'ffmpeg',
       this.globalOptions
         .concat(this.inputContext.inputParameters)
-        .concat(this.vf.filterParameters)
+        .concat(['-vf', ...this.vf.filterParameters])
         .concat(this.outputContext.outputParameters),
     )
     let errorMessage = ''
@@ -133,7 +133,6 @@ export class Ffmpeg {
   }
 
   videoFilter(): VideoFilter {
-    this.vf.start()
     return this.vf
   }
 
@@ -148,7 +147,7 @@ export class Ffmpeg {
       cmd += ' ' + this.inputContext.inputParameters.join(' ')
     }
     if (this.vf.filterParameters.length > 0) {
-      cmd += ' ' + this.vf.filterParameters.join(' ')
+      cmd += ' -vf ' + this.vf.filterParameters.join(',')
     }
     if (this.outputContext.outputParameters.length > 0) {
       cmd += ' ' + this.outputContext.outputParameters.join(' ')
