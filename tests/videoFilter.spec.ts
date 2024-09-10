@@ -38,3 +38,48 @@ describe('video filter', () => {
     )
   })
 })
+
+describe('complex filter', () => {
+  let ffmpeg: Ffmpeg
+  beforeEach(() => {
+    ffmpeg = new Ffmpeg()
+  })
+  it('success', () => {
+    ffmpeg
+      .input()
+      .file('tests/media/5s_vertical_1080p.mp4')
+      .complexFilter()
+      .addroi({
+        x: 100,
+        y: 100,
+        w: 100,
+        h: 100,
+      })
+      .end()
+      .output()
+      .file('tests/output/5s_vertical_1080p.mp4')
+    expect(ffmpeg.cmd).toBe(
+      '-i tests/media/5s_vertical_1080p.mp4 -vf addroi=x=100:y=100:w=100:h=100 tests/output/5s_vertical_1080p.mp4',
+    )
+  })
+  it('success with label', () => {
+    ffmpeg
+      .input()
+      .file('tests/media/5s_vertical_1080p.mp4')
+      .complexFilter()
+      .addroi({
+        x: 100,
+        y: 100,
+        w: 100,
+        h: 100,
+        in: '0:v',
+        out: 'v0',
+      })
+      .end()
+      .output()
+      .file('tests/output/5s_vertical_1080p.mp4')
+    expect(ffmpeg.cmd).toBe(
+      '-i tests/media/5s_vertical_1080p.mp4 -vf [0:v]addroi=x=100:y=100:w=100:h=100[v0] tests/output/5s_vertical_1080p.mp4',
+    )
+  })
+})

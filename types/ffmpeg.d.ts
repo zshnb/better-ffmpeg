@@ -28,3 +28,8 @@ export type RunResult = {
 }
 
 export type MediaTarget = 'video' | 'audio'
+
+export type ComplexFilterLabel = {
+  in?: string
+  out?: string
+}

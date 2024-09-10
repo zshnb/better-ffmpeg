@@ -1,5 +1,10 @@
 import logger from './logger'
-import { LogLevelSetting, ReportSetting, RunResult } from '../types/ffmpeg'
+import {
+  ComplexFilterLabel,
+  LogLevelSetting,
+  ReportSetting,
+  RunResult,
+} from '../types/ffmpeg'
 import { LogLevel } from './loglevel'
 import { execFileSync, execSync, spawn } from 'node:child_process'
 import { InputContext } from './inputContext'
@@ -12,7 +17,7 @@ export class Ffmpeg {
   private readonly globalOptions: string[]
   private readonly inputContext: InputContext
   private readonly outputContext: OutputContext
-  private readonly vf: VideoFilter
+  private readonly vf: VideoFilter<{} | ComplexFilterLabel>
   private readonly af: AudioFilter
 
   constructor(ffmpegPath?: string) {
@@ -132,7 +137,11 @@ export class Ffmpeg {
     return this.outputContext
   }
 
-  videoFilter(): VideoFilter {
+  videoFilter(): VideoFilter<{}> {
+    return this.vf
+  }
+
+  complexFilter(): VideoFilter<ComplexFilterLabel> {
     return this.vf
   }
 

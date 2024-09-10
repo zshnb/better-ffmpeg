@@ -1,4 +1,4 @@
-import { Input, MediaTarget } from '../types/ffmpeg'
+import { ComplexFilterLabel, Input, MediaTarget } from '../types/ffmpeg'
 import * as fs from 'node:fs'
 import { Ffmpeg } from './ffmpeg'
 import { VideoFilter } from './filter/VideoFilter'
@@ -83,8 +83,12 @@ export class InputContext {
     return this.ffmpeg
   }
 
-  videoFilter(): VideoFilter {
+  videoFilter(): VideoFilter<{}> {
     return this.ffmpeg.videoFilter()
+  }
+
+  complexFilter(): VideoFilter<ComplexFilterLabel> {
+    return this.ffmpeg.complexFilter()
   }
 
   get inputParameters(): string[] {

@@ -1,7 +1,9 @@
 import { Ffmpeg } from '../ffmpeg'
 import { Addroi } from '../../types/videoFilter'
+import { ComplexFilterLabel } from '../../types/ffmpeg'
+import { buildFilterParam, populateLabel } from '../util/filterUtil'
 
-export class VideoFilter {
+export class VideoFilter<T extends {} | ComplexFilterLabel> {
   private readonly filters: string[]
   private readonly ffmpeg: Ffmpeg
 
@@ -10,12 +12,12 @@ export class VideoFilter {
     this.ffmpeg = ffmpeg
   }
 
-  rawStr(filter: string): VideoFilter {
+  rawStr(filter: string): VideoFilter<T> {
     this.filters.push(filter)
     return this
   }
 
-  raw(name: string, parameters: object): VideoFilter {
+  raw(name: string, parameters: object): VideoFilter<T> {
     const str = `${name}=`
     this.filters.push(
       str +
@@ -28,16 +30,10 @@ export class VideoFilter {
     return this
   }
 
-  addroi(param: Addroi): VideoFilter {
-    const str = 'addroi='
-    this.filters.push(
-      str +
-        Object.entries(param)
-          .map(([key, value]) => {
-            return `${key}=${value}`
-          })
-          .join(':'),
-    )
+  addroi(param: Addroi & T): VideoFilter<T> {
+    let str = `addroi=${buildFilterParam(param)}`
+    str = populateLabel(str, param)
+    this.filters.push(str)
     return this
   }
 
