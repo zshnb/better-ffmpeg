@@ -91,11 +91,16 @@ export class Ffmpeg {
   }
 
   run(): Promise<RunResult> {
+    const startTime = Date.now()
     const childProcess = spawn(
       'ffmpeg',
       this.globalOptions
         .concat(this.inputContext.inputParameters)
-        .concat(['-vf', ...this.vf.filterParameters])
+        .concat(
+          this.vf.filterParameters.length === 0
+            ? []
+            : ['-vf', ...this.vf.filterParameters],
+        )
         .concat(this.outputContext.outputParameters),
     )
     let errorMessage = ''
@@ -103,8 +108,13 @@ export class Ffmpeg {
       errorMessage += data.toString()
     })
     childProcess.stdout.on('data', () => {})
+    logger.info(`Run ffmpeg cmd: ${childProcess.spawnargs.join(' ')}`)
 
     function handleExit(code: number, resolve: (value: RunResult) => void) {
+      const endTime = Date.now()
+      logger.info(
+        `ffmpeg cmd: ${childProcess.spawnargs.join(' ')} took ${endTime - startTime}ms`,
+      )
       if (code !== 0) {
         logger.error(`ffmpeg exited with code ${code}`)
         resolve({
@@ -176,6 +186,7 @@ export class Ffmpeg {
       } else {
         command = 'which ffmpeg'
       }
+      console.log('ffmpeg' + execSync(command))
       return execSync(command).toString().trim()
     } catch (error) {
       logger.error(error, 'ffmpeg not found')

@@ -81,6 +81,7 @@ describe('ffmpeg class', () => {
         '-c:v h264 -i tests/media/5s_vertical_1080p.mp4 tests/output/5s_vertical_1080p.mp4',
       )
       const result = await ffmpeg.run()
+      console.log(result)
       expect(result.exitCode).toBe(0)
     }, 50000)
   })
